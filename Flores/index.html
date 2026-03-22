@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feliz Día de las Flores Blancas, Eli mi amor 🌸</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* Ocultar el cursor normal porque usamos uno de neón personalizado */
+    html, body {
+      background: #000;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      font-family: 'Georgia', serif;
+      cursor: none !important;
+    }
+
+    /* ── CURSOR CORAZÓN NEÓN ───────────────────────────── */
+    .cursor-wrapper {
+      position: fixed;
+      top: 0; left: 0;
+      pointer-events: none; 
+      z-index: 99999;
+      transform: translate(-100px, -100px);
+    }
+    
+    .heart {
+      width: 22px;
+      height: 22px;
+      position: absolute;
+      background: #ff1a66;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      animation: pulsarHeart 0.6s ease-in-out infinite alternate;
+    }
+    
+    .heart::before, .heart::after {
+      content: '';
+      position: absolute;
+      width: 22px; height: 22px;
+      background: inherit;
+      border-radius: 50%;
+    }
+    .heart::before { top: -11px; left: 0; }
+    .heart::after { top: 0; left: 11px; }
+
+    @keyframes pulsarHeart {
+      0% { 
+        transform: translate(-50%, -50%) rotate(-45deg) scale(0.9); 
+        box-shadow: 0 0 10px #ff1a66; 
+      }
+      100% { 
+        transform: translate(-50%, -50%) rotate(-45deg) scale(1.15); 
+        box-shadow: 0 0 25px #ff1a66, 0 0 45px #ff1a66; 
+      }
+    }
+
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0; left: 0;
+    }
+
+    /* ── INTRO SCREEN ─────────────────────────────────── */
+    #intro {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 1.8s ease;
+      cursor: none !important;
+    }
+    #intro.fade-out { opacity: 0; pointer-events: none; }
+
+    .flower-intro {
+      width: 170px;
+      height: 170px;
+      filter: drop-shadow(0 0 30px rgba(255,255,255,0.9));
+      animation: float 3s ease-in-out infinite, glowPulse 2s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-14px); }
+    }
+    @keyframes glowPulse {
+      0%,100% { filter: drop-shadow(0 0 25px rgba(255,255,255,0.8)); }
+      50%      { filter: drop-shadow(0 0 55px rgba(220,220,255,1)); }
+    }
+
+    .tap-text {
+      margin-top: 32px;
+      color: #e0e0ff;
+      font-size: 1.35rem;
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 18px rgba(180,180,255,0.9);
+      animation: blink 1.8s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.35; }
+    }
+
+    /* ── HUD (date + title) ───────────────────────────── */
+    #hud {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      padding: 22px 28px;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1s ease 0.6s;
+    }
+    #hud.visible { opacity: 1; }
+
+    #hud h1 {
+      font-size: clamp(1.4rem, 5vw, 2.5rem);
+      color: #fff;
+      text-shadow:
+        0 0 12px rgba(180,180,255,1),
+        0 0 28px rgba(150,150,255,0.7);
+      font-style: italic;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    #hud .date {
+      text-align: center;
+      font-size: 1.2rem;
+      color: rgba(220,220,255,0.9);
+      letter-spacing: 0.15em;
+    }
+
+    #hint {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.9);
+      font-size: 0.95rem;
+      letter-spacing: 0.05em;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 1s ease 1.5s;
+      pointer-events: none;
+      text-align: center;
+      width: 100%;
+      text-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+    #hint.visible { opacity: 1; }
+    
+    .instruction-highlight {
+      color: #ff66a3;
+      font-weight: bold;
+      text-shadow: 0 0 8px #ff1a66;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Cursor personalizado -->
+<div class="cursor-wrapper" id="heartCursor"><div class="heart"></div></div>
+
+<!-- ── INTRO SCREEN ──────────────────────────────────── -->
+<div id="intro">
+  <svg class="flower-intro" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#ccc" stroke-width="1.5" fill="none" opacity="0.7">
+      <line x1="100" y1="190" x2="100" y2="120"/>
+      <line x1="100" y1="150" x2="70"  y2="110"/>
+      <line x1="100" y1="140" x2="130" y2="105"/>
+      <line x1="100" y1="130" x2="85"  y2="95"/>
+      <line x1="70"  y1="110" x2="55"  y2="85"/>
+      <line x1="70"  y1="110" x2="82"  y2="80"/>
+      <line x1="130" y1="105" x2="148" y2="80"/>
+      <line x1="130" y1="105" x2="118" y2="78"/>
+      <line x1="85"  y1="95"  x2="72"  y2="70"/>
+      <line x1="85"  y1="95"  x2="96"  y2="68"/>
+    </g>
+    <g fill="white" opacity="0.95">
+      <circle cx="100" cy="55" r="9"/>
+      <circle cx="113" cy="48" r="7"/>
+      <circle cx="87"  cy="48" r="7"/>
+      <circle cx="97"  cy="40" r="6"/>
+      <circle cx="55"  cy="80" r="8"/>
+      <circle cx="45"  cy="73" r="6"/>
+      <circle cx="60"  cy="70" r="5"/>
+      <circle cx="82"  cy="76" r="7"/>
+      <circle cx="72"  cy="66" r="5"/>
+      <circle cx="148" cy="75" r="8"/>
+      <circle cx="158" cy="68" r="5"/>
+      <circle cx="140" cy="67" r="6"/>
+      <circle cx="118" cy="73" r="7"/>
+      <circle cx="127" cy="63" r="5"/>
+      <circle cx="96"  cy="63" r="5"/>
+      <circle cx="110" cy="60" r="5"/>
+      <circle cx="78"  cy="58" r="4"/>
+    </g>
+    <g fill="#e8e8ff" opacity="0.6">
+      <circle cx="100" cy="55" r="3"/>
+      <circle cx="55"  cy="80" r="2.5"/>
+      <circle cx="148" cy="75" r="2.5"/>
+      <circle cx="82"  cy="76" r="2"/>
+      <circle cx="118" cy="73" r="2"/>
+    </g>
+  </svg>
+  <p class="tap-text">Toca para iniciar ✨</p>
+</div>
+
+<!-- ── HUD ─────────────────────────────────────────────── -->
+<div id="hud">
+  <h1>Para Eli mi amor ❤️</h1>
+  <div class="date">Feliz Día de las Flores Blancas</div>
+</div>
+
+<div id="hint">Desliza para viajar por la galaxia. <span class="instruction-highlight">Haz click en las Imágenes y Planetas!</span></div>
+
+<!-- ── CANVAS ─────────────────────────────────────────── -->
+<canvas id="c"></canvas>
+
+<script>
+/* ──────────────────────────────────────────────────────
+   CONFIGURACIÓN DE LA GALAXIA
+────────────────────────────────────────────────────── */
+const Z_CENTER      = 1800;
+const CORE_RADIUS   = 150;
+const DISK_RADIUS   = 3800;
+const FOV           = 320;
+
+const MESSAGES = [
+  "Te amo", "Mi niña", "Bonita", "Hermosa",
+  "Cachorro piruleta", "Perrito Chupetin", "Te amo muchoooooooooooooo",
+  "Estas muy linda", "Que carita tan bonita", "Muejejeje", "TQM"
+];
+
+const IMAGE_FILES = [
+  "-976607614.png",
+  "5a0d28eff242963a8c09fb3a731192ed.jpg",
+  "9f82fb85144bd778d181d0903fc0c5fa.jpg",
+  "A17232_ea469032-bb0b-47f4-95cc-eb67c8f53f51.webp",
+  "ac610c5965e787214e369d2a33bcc35f.jpg",
+  "can-anyone-find-da-dawg-suckin-on-da-binky-v0-ofoj63wtkrgc1%20(1).webp",
+  "can-anyone-find-da-dawg-suckin-on-da-binky-v0-ofoj63wtkrgc1.webp",
+  "cosplaying-as-the-propeller-hat-dog-meme-v0-zeaprnzuibff1.webp",
+  "de6182aa7f2e76650b91b48868fa3af6-imagen-de-un-ramo-de-flores.webp",
+  "fd1a173e7f1191ea8a8e7cc4fbdc7bdb-diseno-de-flores-blancas-semi-planas.webp",
+  "flower-2331873_1280.webp",
+  "images%20(1).jpg",
+  "images%20(2).jpg",
+  "images%20(3).jpg",
+  "images%20(4).jpg",
+  "images%20(5).jpg",
+  "images.jpg",
+  "pngtree-babybreath-blossom-gypsophila-png-image_6969511.png",
+  "s11728_flores_isolated_on_white_background_68b500fb-4ab1-4cc8-99ec-08f8166f489d_1-photoroom-300x300.png",
+  "sticker-fan_4406804_o.webp",
+  "unnamed.webp",
+  "white-flower-free-png.webp"
+];
+
+const loadedImages = [];
+IMAGE_FILES.forEach((src) => {
+  const img = new Image();
+  img.src = decodeURI(src); 
+  loadedImages.push(img);
+});
+
+/* ──────────────────────────────────────────────────────
+   ESTADO Y CÁMARA
+────────────────────────────────────────────────────── */
+let started = false;
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+let W, H, cx, cy;
+
+let camX = 0, camY = -600, camZ = -2500;
+let tCamX = 0, tCamY = -600, tCamZ = -800; 
+
+let currentRenderList = [];
+let explosionParticles = [];
+
+/* ──────────────────────────────────────────────────────
+   GENERACIÓN DE ENTIDADES
+────────────────────────────────────────────────────── */
+const coreStars = [];
+const diskStars = [];
+const objects   = []; 
+
+// 1. Núcleo brillante
+for (let i = 0; i < 2000; i++) {
+  const r = 80 + Math.pow(Math.random(), 2) * (CORE_RADIUS - 80);
+  coreStars.push({
+    r, theta: Math.random() * Math.PI * 2,
+    y: (Math.random() - 0.5) * 30,
+    size: Math.random() * 2.5 + 1,
+    color: Math.random() > 0.4 ? '#e8eeff' : '#ffffff',
+    vTheta: 0.02 * (CORE_RADIUS / r)
+  });
+}
+
+// 2. Disco Galáctico
+for (let i = 0; i < 3500; i++) {
+  const arms = 5;
+  const r = CORE_RADIUS + 50 + Math.pow(Math.random(), 1.5) * (DISK_RADIUS - CORE_RADIUS - 50);
+  const theta = (Math.floor(Math.random() * arms) * (Math.PI * 2 / arms)) + (r * 0.0025) + ((Math.random() - 0.5) * 0.9);
+  const thickness = 150 * (1 - r / DISK_RADIUS) + 20;
+
+  diskStars.push({
+    r, theta,
+    y: (Math.random() - 0.5) * thickness * 2,
+    size: Math.random() * 1.5 + 0.5,
+    color: Math.random() > 0.3 ? '#c0c8ff' : '#ffffff',
+    vTheta: 0.015 * (CORE_RADIUS / r)
+  });
+}
+
+// 3. Objetos: Textos, Flores, Imágenes y Planetas
+function makeFlowerBlueprint() {
+  const circles = [];
+  const stems   = [];
+  const branchCount = Math.floor(Math.random() * 3) + 3;
+  for (let b = 0; b < branchCount; b++) {
+    const ang   = (b / branchCount) * Math.PI * 2 + Math.random() * 0.4;
+    const blen  = 0.55 + Math.random() * 0.45;
+    const bx    = Math.cos(ang) * blen;
+    const by    = Math.sin(ang) * blen;
+    stems.push([0, -0.1, bx, by - 0.1]);
+    const subCount = Math.floor(Math.random() * 3) + 2;
+    for (let s = 0; s < subCount; s++) {
+      const frac = 0.5 + (s / subCount) * 0.5;
+      const offA = ang + (Math.random() - 0.5) * 0.8;
+      circles.push({ x: bx * frac + Math.cos(offA) * 0.25 * (1 - frac + 0.3), y: (by - 0.1) * frac + Math.sin(offA) * 0.15 * (1 - frac + 0.3) - 0.1, r: 0.12 + Math.random() * 0.12 });
+    }
+  }
+  circles.push({ x: 0, y: -0.1, r: 0.18 });
+  return { circles, stems };
+}
+
+const flowerBlueprints = Array.from({ length: 25 }, makeFlowerBlueprint);
+
+const objTypes = [];
+for (let i = 0; i < 70; i++) objTypes.push('TEXT');
+for (let i = 0; i < 400; i++) objTypes.push('FLOWER');
+for (let i = 0; i < 120; i++) objTypes.push('IMAGE');
+for (let i = 0; i < 25; i++) objTypes.push('PLANET');
+
+for (const t of objTypes) {
+  const r = CORE_RADIUS + 150 + Math.pow(Math.random(), 1.2) * (DISK_RADIUS - CORE_RADIUS - 150);
+  const theta = Math.random() * Math.PI * 2;
+  
+  const planetTypes = ['HEART', 'RING', 'STAR'];
+  const colors = ['#ff4d94', '#ff80bf', '#ff1a75', '#e600e6', '#cc99ff'];
+  
+  objects.push({
+    type: t,
+    pType: t === 'PLANET' ? planetTypes[Math.floor(Math.random() * planetTypes.length)] : null,
+    r, theta,
+    y: (Math.random() - 0.5) * 250,
+    size: t === 'TEXT' ? (18 + Math.random() * 20) :
+          t === 'PLANET' ? (35 + Math.random() * 30) :
+          t === 'IMAGE' ? (35 + Math.random() * 30) :
+          (20 + Math.random() * 25), // flower
+    text: t === 'TEXT' ? MESSAGES[Math.floor(Math.random() * MESSAGES.length)] : null,
+    bp: t === 'FLOWER' ? flowerBlueprints[Math.floor(Math.random() * flowerBlueprints.length)] : null,
+    img: t === 'IMAGE' ? loadedImages[Math.floor(Math.random() * loadedImages.length)] : null,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    alpha: 0.8 + Math.random() * 0.2,
+    vTheta: 0.015 * (CORE_RADIUS / r)
+  });
+}
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+window.addEventListener('resize', resize);
+resize();
+
+function project(px, py, pz) {
+  const dz = pz - camZ;
+  if (dz < 10) return { scale: -1, sx: 0, sy: 0, dz }; 
+  const scale = FOV / dz;
+  return {
+    sx: cx + (px - camX) * scale,
+    sy: cy + (py - camY) * scale,
+    scale, dz
+  };
+}
+
+function drawBackground() {
+  ctx.fillStyle = 'rgba(0,0,0,1)';
+  ctx.fillRect(0, 0, W, H);
+  
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(performance.now() * 0.00002);
+  const clouds = [
+    { x: cx * 1.5, y: cy * -0.5, r: W * 0.8, c: '40,15,60' },
+    { x: -cx * 0.8, y: cy * 1.2, r: W * 0.7, c: '15,25,70' },
+    { x: 0, y: 0, r: W * 0.5, c: '30,10,50' },
+  ];
+  for (const cl of clouds) {
+    const g = ctx.createRadialGradient(cl.x, cl.y, 0, cl.x, cl.y, cl.r);
+    g.addColorStop(0, `rgba(${cl.c},0.1)`);
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(cl.x, cl.y, cl.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawPlanet(pType, size, color) {
+  ctx.save();
+  if (pType === 'HEART') {
+    ctx.beginPath();
+    const th = size * 0.3;
+    ctx.moveTo(0, size * 0.25);
+    ctx.bezierCurveTo(0, -th, -size, -th, -size, size * 0.25);
+    ctx.bezierCurveTo(-size, size * 0.6, 0, size * 0.8, 0, size * 1.2);
+    ctx.bezierCurveTo(0, size * 0.8, size, size * 0.6, size, size * 0.25);
+    ctx.bezierCurveTo(size, -th, 0, -th, 0, size * 0.25);
+  } else if (pType === 'RING') {
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 1.6, size * 0.4, Math.PI / 6, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255,255,255,0.7)`;
+    ctx.lineWidth = size * 0.15;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.7, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 1.6, size * 0.4, Math.PI / 6, 0, Math.PI, false);
+    ctx.strokeStyle = `rgba(255,255,255,0.9)`;
+    ctx.lineWidth = size * 0.15;
+    ctx.stroke();
+    ctx.restore();
+    return;
+  } else if (pType === 'STAR') {
+    ctx.beginPath();
+    ctx.moveTo(0, -size);
+    ctx.quadraticCurveTo(size*0.2, -size*0.2, size, 0);
+    ctx.quadraticCurveTo(size*0.2, size*0.2, 0, size);
+    ctx.quadraticCurveTo(-size*0.2, size*0.2, -size, 0);
+    ctx.quadraticCurveTo(-size*0.2, -size*0.2, 0, -size);
+  }
+  ctx.fillStyle = color;
+  ctx.shadowBlur = size * 0.5;
+  ctx.shadowColor = color;
+  ctx.fill();
+  ctx.restore();
+}
+
+function createImageExplosion(ox, oy) {
+  for (let i = 0; i < 12; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 8 + 4;
+    const img = loadedImages[Math.floor(Math.random() * loadedImages.length)];
+    explosionParticles.push({
+      type: 'IMAGE',
+      x: ox, y: oy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 6,
+      life: 1.0, decay: Math.random() * 0.015 + 0.01,
+      size: Math.random() * 70 + 60,
+      img: img, rot: Math.random() * Math.PI * 2,
+      vRot: (Math.random() - 0.5) * 0.3
+    });
+  }
+}
+
+function createFlowerExplosion(ox, oy) {
+  for (let i = 0; i < 35; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 7 + 2;
+    explosionParticles.push({
+      type: 'PETAL',
+      x: ox, y: oy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 4,
+      life: 1.0, decay: Math.random() * 0.02 + 0.015,
+      size: Math.random() * 12 + 8
+    });
+  }
+}
+
+function updateDrawExplosions(dt) {
+  ctx.globalCompositeOperation = 'source-over';
+  for (let i = explosionParticles.length - 1; i >= 0; i--) {
+    const p = explosionParticles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 0.3 * dt; 
+    p.life -= p.decay * dt;
+    
+    if (p.life <= 0) {
+      explosionParticles.splice(i, 1);
+      continue;
+    }
+    
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.globalAlpha = Math.max(0, p.life);
+    
+    if (p.type === 'IMAGE' && p.img && p.img.complete) {
+      ctx.rotate(p.rot);
+      p.rot += p.vRot * dt;
+      const aspect = p.img.naturalWidth / p.img.naturalHeight;
+      const drawH = p.size;
+      const drawW = drawH * aspect;
+      
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = `rgba(255,255,255,${p.life * 0.5})`;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(-drawW/2 - 4, -drawH/2 - 4, drawW + 8, drawH + 8);
+      ctx.drawImage(p.img, -drawW/2, -drawH/2, drawW, drawH);
+    } else {
+      ctx.rotate(p.vx * p.life * 0.5);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, -4, p.size*0.4, 0, Math.PI*2);
+      ctx.arc(-4, 3, p.size*0.4, 0, Math.PI*2);
+      ctx.arc(4, 3, p.size*0.4, 0, Math.PI*2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#ff1a66';
+      ctx.beginPath();
+      ctx.arc(0, 0, p.size*0.2, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+/* ──────────────────────────────────────────────────────
+   BUCLE PRINCIPAL
+────────────────────────────────────────────────────── */
+let lastT = performance.now();
+
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dtRaw = (now - lastT) / 16.67;
+  const dt = Math.min(dtRaw, 3);
+  lastT = now;
+
+  if (!started) {
+    drawBackground();
+    return;
+  }
+
+  camX += (tCamX - camX) * 0.04 * dt;
+  camY += (tCamY - camY) * 0.04 * dt;
+  camZ += (tCamZ - camZ) * 0.04 * dt;
+
+  drawBackground();
+
+  ctx.globalCompositeOperation = 'lighter';
+  for (const s of [...diskStars, ...coreStars]) {
+    s.theta -= s.vTheta * dt; 
+    const px = s.r * Math.cos(s.theta);
+    const pz = Z_CENTER + s.r * Math.sin(s.theta);
+    const p = project(px, s.y, pz);
+    
+    if (p.scale > 0 && p.sx > -20 && p.sx < W+20 && p.sy > -20 && p.sy < H+20) {
+      ctx.fillStyle = s.color;
+      const radius = s.size * p.scale;
+      ctx.fillRect(p.sx - radius/2, p.sy - radius/2, radius, radius);
+    }
+  }
+
+  const cp = project(0, 0, Z_CENTER);
+  if (cp.scale > 0 && cp.dz > 10) {
+    const coreFade = Math.min(1, cp.dz / 2500);
+    const rad = 450 * cp.scale;
+    const grd = ctx.createRadialGradient(cp.sx, cp.sy, 0, cp.sx, cp.sy, rad);
+    grd.addColorStop(0, `rgba(255,255,255,${0.9 * coreFade})`);
+    grd.addColorStop(0.1, `rgba(220,230,255,${0.6 * coreFade})`);
+    grd.addColorStop(0.3, `rgba(100,150,255,${0.15 * coreFade})`);
+    grd.addColorStop(1, 'transparent');
+    
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(cp.sx, cp.sy, rad, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = `rgba(0,0,0,${0.95 * coreFade})`;
+    ctx.beginPath();
+    ctx.arc(cp.sx, cp.sy, 110 * cp.scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  currentRenderList = [];
+  ctx.globalCompositeOperation = 'source-over';
+  
+  for (const obj of objects) {
+    obj.theta -= obj.vTheta * dt;
+    const px = obj.r * Math.cos(obj.theta);
+    const pz = Z_CENTER + obj.r * Math.sin(obj.theta);
+    const p = project(px, obj.y, pz);
+    
+    if (p.scale > 0 && p.sx > -300 && p.sx < W+300 && p.sy > -300 && p.sy < H+300) {
+      currentRenderList.push({ obj, ...p });
+    }
+  }
+  
+  currentRenderList.sort((a, b) => b.dz - a.dz);
+
+  for (const item of currentRenderList) {
+    const { obj, sx, sy, scale, dz } = item;
+    const distFade = Math.max(0, 1 - (dz / 2800));
+    const a = obj.alpha * distFade;
+    const size = obj.size * scale;
+    
+    if (size < 1) continue;
+
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.globalAlpha = a; 
+
+    if (obj.type === 'TEXT') {
+      if (size >= 5) {
+        ctx.font = `italic ${size}px "Georgia", serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.shadowBlur = size * 0.4;
+        ctx.shadowColor = `rgba(255, 255, 255, ${a * 0.6})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${a})`;
+        ctx.fillText(obj.text, 0, 0);
+      }
+    } else if (obj.type === 'PLANET') {
+      drawPlanet(obj.pType, size, obj.color);
+    } else if (obj.type === 'IMAGE') {
+      if (obj.img && obj.img.complete && obj.img.naturalWidth > 0) {
+        const aspect = obj.img.naturalWidth / obj.img.naturalHeight;
+        const drawH = size * 2.5; 
+        const drawW = drawH * aspect;
+        ctx.drawImage(obj.img, -drawW/2, -drawH/2, drawW, drawH);
+      }
+    } else if (obj.type === 'FLOWER') {
+      ctx.strokeStyle = `rgba(200,200,220,${a * 0.4})`;
+      ctx.lineWidth   = Math.max(0.3, size * 0.025);
+      ctx.beginPath();
+      for (const [x1, y1, x2, y2] of obj.bp.stems) {
+        ctx.moveTo(x1 * size, y1 * size);
+        ctx.lineTo(x2 * size, y2 * size);
+      }
+      ctx.stroke();
+
+      ctx.fillStyle = `rgba(255,255,255,${a * 0.95})`;
+      for (const c of obj.bp.circles) {
+        const pr = Math.max(0.7, c.r * size);
+        ctx.beginPath();
+        ctx.arc(c.x * size, c.y * size, pr, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  updateDrawExplosions(dt);
+}
+requestAnimationFrame(loop);
+
+/* ──────────────────────────────────────────────────────
+   INTERACCIONES
+────────────────────────────────────────────────────── */
+const heartCursor = document.getElementById('heartCursor');
+
+function startExperience() {
+  if (started) return;
+  started = true;
+  document.getElementById('intro').classList.add('fade-out');
+  setTimeout(() => document.getElementById('intro').style.display = 'none', 1800);
+  document.getElementById('hud').classList.add('visible');
+  document.getElementById('hint').classList.add('visible');
+}
+
+document.getElementById('intro').addEventListener('click', startExperience);
+document.getElementById('intro').addEventListener('touchstart', startExperience, { passive: true });
+
+window.addEventListener('mousemove', (e) => {
+  heartCursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+  const mx = (e.clientX / W) * 2 - 1; 
+  const my = (e.clientY / H) * 2 - 1; 
+  tCamX = mx * 1200;
+  tCamY = -600 + my * 800; 
+});
+
+window.addEventListener('click', (e) => {
+  if (!started) return;
+  const cx = e.clientX;
+  const cy = e.clientY;
+  
+  let clickedObj = null;
+  let clickedIndex = -1;
+
+  for (let i = currentRenderList.length - 1; i >= 0; i--) {
+    const item = currentRenderList[i];
+    if (item.obj.type === 'PLANET') {
+      const drawSize = item.obj.size * item.scale * 1.5; 
+      if (Math.abs(cx - item.sx) < drawSize && Math.abs(cy - item.sy) < drawSize) {
+        clickedObj = item.obj;
+        clickedIndex = objects.indexOf(item.obj);
+        break;
+      }
+    } else if (item.obj.type === 'IMAGE') {
+      if (item.obj.img && item.obj.img.complete) {
+        const aspect = item.obj.img.naturalWidth / item.obj.img.naturalHeight;
+        const drawH = item.obj.size * item.scale * 2.5; 
+        const drawW = drawH * aspect;
+        if (Math.abs(cx - item.sx) < drawW * 0.6 && Math.abs(cy - item.sy) < drawH * 0.6) {
+          clickedObj = item.obj;
+          break;
+        }
+      }
+    }
+  }
+
+  if (clickedObj) {
+    if (clickedObj.type === 'PLANET') {
+      createImageExplosion(cx, cy);
+      if (clickedIndex !== -1) objects.splice(clickedIndex, 1);
+    } else if (clickedObj.type === 'IMAGE') {
+      createFlowerExplosion(cx, cy);
+    }
+  }
+});
+
+let lastTouchY = 0;
+window.addEventListener('touchstart', (e) => {
+  lastTouchY = e.touches[0].clientY;
+  heartCursor.style.transform = `translate(${e.touches[0].clientX}px, ${e.touches[0].clientY}px)`;
+}, { passive: true });
+
+window.addEventListener('touchmove', (e) => {
+  heartCursor.style.transform = `translate(${e.touches[0].clientX}px, ${e.touches[0].clientY}px)`;
+  const dy = lastTouchY - e.touches[0].clientY;
+  tCamZ += dy * 8; 
+  if (tCamZ > Z_CENTER + 500) tCamZ = Z_CENTER + 500;
+  if (tCamZ < -4000) tCamZ = -4000;
+  
+  const mx = (e.touches[0].clientX / W) * 2 - 1;
+  const my = (e.touches[0].clientY / H) * 2 - 1;
+  tCamX = mx * 1200;
+  tCamY = -600 + my * 800; 
+  
+  lastTouchY = e.touches[0].clientY;
+}, { passive: true });
+
+window.addEventListener('wheel', (e) => {
+  tCamZ += e.deltaY * 1.5;
+  if (tCamZ > Z_CENTER + 500) tCamZ = Z_CENTER + 500;
+  if (tCamZ < -4000) tCamZ = -4000;
+}, { passive: true });
+
+</script>
+</body>
+</html>
